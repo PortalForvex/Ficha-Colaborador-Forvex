@@ -541,6 +541,7 @@
       <i class="ti ti-circle-check"></i>
       <h3>Ficha completa e arquivada!</h3>
       <p>Todos os dados foram guardados no Google Sheets e o email de confirmação foi enviado.</p>
+      <button class="btn btn-amber" style="margin-top:1.25rem;" onclick="gerarPDF()"><i class="ti ti-file-type-pdf" style="margin-right:6px;"></i> Guardar PDF da ficha</button>
     </div>
   </div>
 
@@ -678,7 +679,7 @@
   document.getElementById('admForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    var dadosAdm = {
+    dadosAdm = {
       fase: 'administracao',
       nomeColaborador: nomeColaboradorGuardado,
       funcao: val('funcao'), departamento: val('departamento'),
@@ -733,6 +734,158 @@
   });
 
   updateUI();
+
+  function campo(label, valor) {
+    return '<div class="pdf-field"><label>' + label + '</label><span>' + (valor || '—') + '</span></div>';
+  }
+  function campoFull(label, valor) {
+    return '<div class="pdf-field full"><label>' + label + '</label><span>' + (valor || '—') + '</span></div>';
+  }
+
+  function gerarPDF() {
+    var d = dadosColab;
+    var adm = dadosAdm || {};
+    var agora = new Date().toLocaleDateString('pt-PT');
+
+    var html = '<div class="pdf-header">' +
+      '<div class="pdf-title">Ficha do Colaborador — Fortix</div>' +
+      '<div class="pdf-sub">Gerada em ' + agora + ' &nbsp;|&nbsp; ' + (d.nomeCompleto || '') + '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Identificação</div>' +
+      '<div class="pdf-grid">' +
+        campo('Nome completo', d.nomeCompleto) +
+        campo('Data de nascimento', d.dataNasc) +
+        campo('NIF', d.nif) +
+        campo('NISS', d.niss) +
+        campo('Tipo de documento', d.tipoDoc) +
+        campo('N.º do documento', d.numDoc) +
+        campo('Validade', d.validadeDoc) +
+        campo('Nacionalidade', d.nacionalidade) +
+        campo('Género', d.genero) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Morada</div>' +
+      '<div class="pdf-grid">' +
+        campoFull('Rua / Avenida', d.morada) +
+        campo('Código postal', d.codPostal) +
+        campo('Localidade', d.localidade) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Contactos</div>' +
+      '<div class="pdf-grid">' +
+        campo('Telemóvel', d.telemovel) +
+        campo('Telefone fixo', d.telefone) +
+        campo('Email pessoal', d.emailPessoal) +
+        campo('Contacto emergência', d.contactoEmerg) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Dados bancários</div>' +
+      '<div class="pdf-grid">' +
+        campoFull('IBAN', d.iban) +
+        campo('SWIFT / BIC', d.swift) +
+        campo('Banco', d.banco) +
+        campo('Titular da conta', d.titularConta) +
+        campo('IRS', d.irs) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Estado civil e família</div>' +
+      '<div class="pdf-grid">' +
+        campo('Estado civil', d.estadoCivil) +
+        campo('Dependentes', d.temDep) +
+        campo('N.º dependentes', d.numDep) +
+        campo('Idades', d.idadesDep) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Saúde e escolaridade</div>' +
+      '<div class="pdf-grid">' +
+        campo('Deficiência', d.temDef) +
+        campo('Grau incapacidade', d.grauDef) +
+        campo('Tipo deficiência', d.tipoDef) +
+        campo('Escolaridade', d.grauEscolar) +
+        campo('Área de formação', d.areaCurso) +
+        campo('Instituição', d.instituicao) +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pdf-section">' +
+      '<div class="pdf-section-title">Fardamento</div>' +
+      '<div class="pdf-grid">' +
+        campo('N.º de bota', d.numBota) +
+        campo('Tamanho de fato', d.numFato) +
+      '</div>' +
+    '</div>';
+
+    if (adm.funcao) {
+      html += '<div class="pdf-section">' +
+        '<div class="pdf-section-title adm">Dados profissionais</div>' +
+        '<div class="pdf-grid">' +
+          campo('Função / Cargo', adm.funcao) +
+          campo('Departamento', adm.departamento) +
+          campo('Data de admissão', adm.dataAdmissao) +
+          campo('Tipo de contrato', adm.tipoContrato) +
+          campo('Horário', adm.horario) +
+          campo('Salário base', adm.salarioBase ? adm.salarioBase + ' €' : '') +
+          campo('Categoria profissional', adm.categoriaProf) +
+          campo('N.º colaborador', adm.numColaborador) +
+          campoFull('Notas internas', adm.notasAdm) +
+        '</div>' +
+      '</div>';
+
+      if (adm.demitido === 'Sim') {
+        html += '<div class="pdf-section">' +
+          '<div class="pdf-section-title" style="color:#A32D2D;">Cessação de contrato</div>' +
+          '<div class="pdf-grid">' +
+            campo('Data de cessação', adm.dataDemissao) +
+            campo('Motivo', adm.motivoDemissao) +
+            campo('Aviso prévio', adm.avisoPrevio) +
+            campoFull('Observações', adm.obsCessacao) +
+          '</div>' +
+        '</div>';
+      }
+    }
+
+    html += '<div class="pdf-footer">Ficha gerada automaticamente pelo sistema de RH Fortix &nbsp;|&nbsp; ' + agora + '</div>';
+
+    document.getElementById('pdfContent').innerHTML = html;
+    window.print();
+  }
+
+  var dadosAdm = {};
 </script>
+
+<!-- PDF TEMPLATE -->
+<div id="pdfTemplate" style="display:none;">
+  <div id="pdfContent" style="font-family:Arial,sans-serif;font-size:13px;color:#1a1a18;padding:32px;max-width:750px;margin:0 auto;"></div>
+</div>
+
+<style>
+@media print {
+  body > .page, body > div:not(#pdfTemplate) { display: none !important; }
+  #pdfTemplate { display: block !important; }
+  .pdf-section { margin-bottom: 16px; page-break-inside: avoid; }
+  .pdf-header { border-bottom: 2px solid #185FA5; margin-bottom: 20px; padding-bottom: 10px; }
+  .pdf-title { font-size: 20px; font-weight: bold; color: #185FA5; }
+  .pdf-sub { font-size: 12px; color: #888; margin-top: 4px; }
+  .pdf-section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; color: #185FA5; margin-bottom: 8px; padding-bottom: 3px; border-bottom: 1px solid #e0ddd5; }
+  .pdf-section-title.adm { color: #BA7517; }
+  .pdf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; }
+  .pdf-field label { font-size: 10px; color: #888; display: block; margin-bottom: 1px; }
+  .pdf-field span { font-size: 13px; color: #1a1a18; font-weight: 500; }
+  .pdf-field.full { grid-column: 1 / -1; }
+  .pdf-footer { margin-top: 24px; border-top: 1px solid #e0ddd5; padding-top: 10px; font-size: 10px; color: #aaa; }
+}
+</style>
 </body>
 </html>
