@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ficha do Colaborador</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.4.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f3; min-height: 100vh; padding: 2rem 1rem; color: #1a1a18; }
+    .page { max-width: 700px; margin: 0 auto; }
+    .fc-header { display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid #e0ddd5; }
+    .fc-logo { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .fc-logo.colab { background: #E6F1FB; }
+    .fc-logo.adm   { background: #FAEEDA; }
+    .fc-title { font-size: 20px; font-weight: 600; color: #1a1a18; }
+    .fc-sub   { font-size: 13px; color: #6b6b68; margin-top: 3px; }
+    .phase-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-bottom: 6px; letter-spacing: 0.04em; }
+    .phase-badge.colab { background: #E6F1FB; color: #185FA5; }
+    .phase-badge.adm   { background: #FAEEDA; color: #BA7517; }
+    .section { background: #fff; border: 1px solid #e8e6df; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .section-title { font-size: 11px; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+    .section-title i { font-size: 16px; color: #378ADD; }
+    .section-title.adm-color i { color: #BA7517; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+    label.lbl { font-size: 13px; color: #555552; font-weight: 500; }
+    .req { color: #E24B4A; margin-left: 2px; }
+    input, select, textarea { font-size: 14px; color: #1a1a18; background: #f9f8f5; border: 1px solid #d4d2ca; border-radius: 8px; padding: 9px 12px; width: 100%; outline: none; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+    input:focus, select:focus, textarea:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.15); background: #fff; }
+    textarea { resize: vertical; min-height: 64px; }
+    .radio-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .radio-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #1a1a18; background: #f9f8f5; border: 1px solid #d4d2ca; border-radius: 8px; padding: 7px 14px; transition: border-color 0.15s, background 0.15s; user-select: none; }
+    .radio-opt input[type=radio] { display: none; }
+    .radio-opt.selected { border-color: #378ADD; background: #E6F1FB; color: #185FA5; font-weight: 600; }
+    .progress-wrap { margin-bottom: 1.5rem; }
+    .progress-label { font-size: 12px; color: #888780; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .progress-bar { height: 5px; background: #e8e6df; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.35s ease; }
+    .progress-fill.colab { background: #378ADD; }
+    .progress-fill.adm   { background: #BA7517; }
+    .step-dots { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+    .step-dot { flex: 1; height: 4px; border-radius: 2px; background: #e8e6df; transition: background 0.3s; }
+    .step-dot.done   { background: #378ADD; }
+    .step-dot.active { background: #185FA5; }
+    .helper { font-size: 12px; color: #aaa9a5; margin-top: 2px; }
+    .hidden { display: none !important; }
+    .btn-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
+    .btn { padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #d4d2ca; background: transparent; color: #1a1a18; transition: background 0.15s; font-family: inherit; }
+    .btn:hover { background: #f0ede6; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-blue  { background: #185FA5; color: #fff; border-color: #185FA5; }
+    .btn-blue:hover  { background: #0C447C; border-color: #0C447C; }
+    .btn-amber { background: #BA7517; color: #fff; border-color: #BA7517; }
+    .btn-amber:hover { background: #854F0B; border-color: #854F0B; }
+    .loading-msg { display:none; font-size: 13px; color: #378ADD; align-items: center; gap: 8px; margin-top: 1rem; }
+    .loading-msg i { animation: spin 1s linear infinite; font-size: 18px; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .success-colab { background: #EAF3DE; border: 1px solid #639922; border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1rem; }
+    .success-colab i  { font-size: 40px; color: #3B6D11; display: block; margin-bottom: 10px; }
+    .success-colab h3 { font-size: 17px; font-weight: 600; color: #27500A; margin-bottom: 6px; }
+    .success-colab p  { font-size: 13px; color: #3B6D11; line-height: 1.6; }
+    .adm-gate { background: #FAEEDA; border: 1px solid #FAC775; border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .adm-gate i { font-size: 30px; color: #BA7517; flex-shrink: 0; }
+    .adm-gate-text { flex: 1; min-width: 180px; }
+    .adm-gate-text p { font-size: 13px; color: #854F0B; line-height: 1.5; }
+    .adm-gate-text p strong { display: block; margin-bottom: 3px; font-size: 14px; }
+    .success-final { display: none; background: #EAF3DE; border: 1px solid #639922; border-radius: 12px; padding: 2rem; text-align: center; }
+    .success-final i  { font-size: 48px; color: #3B6D11; display: block; margin-bottom: 12px; }
+    .success-final h3 { font-size: 20px; font-weight: 600; color: #27500A; margin-bottom: 8px; }
+    .success-final p  { font-size: 14px; color: #3B6D11; }
+    .rgpd-box { background: #E6F1FB; border: 1px solid #B5D4F4; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .rgpd-box p { font-size: 13px; color: #185FA5; line-height: 1.6; margin-bottom: 12px; }
+    .rgpd-check { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .rgpd-check input { width: 17px; height: 17px; flex-shrink: 0; }
+    .rgpd-check span { font-size: 13px; font-weight: 500; color: #185FA5; }
+    .erro-msg { background: #FCEBEB; border: 1px solid #F09595; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #A32D2D; margin-top: 12px; display: none; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .adm-gate { flex-direction: column; } }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ⚠️  SUBSTITUA ESTA URL PELO ENDEREÇO DO SEU GOOGLE APPS SCRIPT -->
+  <script>
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSoc3E2shvOpSE9c1YH7l9M2N-PZeOjZGsEAoAUyyOK4FHRSBWFgTIhlQQU2C9cEe9eg/exec";
+    var nomeColaboradorGuardado = "";
+  </script>
+
+  <!-- ═══ FASE COLABORADOR ═══ -->
+  <div id="phaseColab">
+    <div class="fc-header">
+      <div class="fc-logo colab"><i class="ti ti-id-badge-2" style="font-size:26px;color:#185FA5;"></i></div>
+      <div>
+        <div class="phase-badge colab"><i class="ti ti-user" style="font-size:12px;"></i> Preenchimento pelo colaborador</div>
+        <div class="fc-title">Ficha do Colaborador</div>
+        <div class="fc-sub">Campos com <span style="color:#E24B4A">*</span> são obrigatórios</div>
+      </div>
+    </div>
+
+    <div class="step-dots">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+      <div class="step-dot" id="dot3"></div>
+      <div class="step-dot" id="dot4"></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="stepLabel">Passo 1 de 4 — Identificação</span>
+        <span id="pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill colab" id="prog" style="width:0%"></div></div>
+    </div>
+
+    <form id="colForm" novalidate>
+
+      <!-- PASSO 1 -->
+      <div id="step1">
+        <div class="section">
+          <div class="section-title"><i class="ti ti-user"></i> Dados de identificação</div>
+          <div class="grid2">
+            <div class="field full">
+              <label class="lbl" for="nomeCompleto">Nome completo <span class="req">*</span></label>
+              <input type="text" id="nomeCompleto" placeholder="Ex: João Manuel Silva" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="dataNasc">Data de nascimento <span class="req">*</span></label>
+              <input type="date" id="dataNasc" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="nif">NIF <span class="req">*</span></label>
+              <input type="text" id="nif" placeholder="123456789" maxlength="9" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="niss">NISS — Seg. Social <span class="req">*</span></label>
+              <input type="text" id="niss" placeholder="00000000000" maxlength="11" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="tipoDoc">Tipo de documento <span class="req">*</span></label>
+              <select id="tipoDoc" required>
+                <option value="">Selecionar...</option>
+                <option>Cartão de Cidadão</option><option>Bilhete de Identidade</option>
+                <option>Passaporte</option><option>Autorização de Residência</option><option>Outro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl" for="numDoc">N.º do documento <span class="req">*</span></label>
+              <input type="text" id="numDoc" placeholder="Ex: 12345678 9 ZZ9" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="validadeDoc">Validade do documento <span class="req">*</span></label>
+              <input type="date" id="validadeDoc" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="nacionalidade">Nacionalidade <span class="req">*</span></label>
+              <input type="text" id="nacionalidade" placeholder="Ex: Portuguesa" required />
+            </div>
+            <div class="field full">
+              <label class="lbl">Género <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-opt"><input type="radio" name="genero" value="Masculino"> Masculino</label>
+                <label class="radio-opt"><input type="radio" name="genero" value="Feminino"> Feminino</label>
+                <label class="radio-opt"><input type="radio" name="genero" value="Outro"> Outro</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="ti ti-map-pin"></i> Morada</div>
+          <div class="grid2">
+            <div class="field full">
+              <label class="lbl" for="morada">Rua / Avenida <span class="req">*</span></label>
+              <input type="text" id="morada" placeholder="Ex: Rua das Flores, 25, 2.º Dto" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="codPostal">Código postal <span class="req">*</span></label>
+              <input type="text" id="codPostal" placeholder="0000-000" maxlength="8" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="localidade">Localidade <span class="req">*</span></label>
+              <input type="text" id="localidade" placeholder="Ex: Setúbal" required />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 2 -->
+      <div id="step2" class="hidden">
+        <div class="section">
+          <div class="section-title"><i class="ti ti-phone"></i> Contactos</div>
+          <div class="grid2">
+            <div class="field">
+              <label class="lbl" for="telemovel">Telemóvel <span class="req">*</span></label>
+              <input type="tel" id="telemovel" placeholder="9XX XXX XXX" required />
+            </div>
+            <div class="field">
+              <label class="lbl" for="telefone">Telefone fixo</label>
+              <input type="tel" id="telefone" placeholder="2XX XXX XXX" />
+            </div>
+            <div class="field full">
+              <label class="lbl" for="emailPessoal">Email pessoal <span class="req">*</span></label>
+              <input type="email" id="emailPessoal" placeholder="exemplo@email.com" required />
+            </div>
+            <div class="field full">
+              <label class="lbl" for="contactoEmerg">Contacto de emergência — nome e telefone <span class="req">*</span></label>
+              <input type="text" id="contactoEmerg" placeholder="Ex: Maria Silva — 912 000 000" required />
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="ti ti-building-bank"></i> Dados bancários</div>
+          <div class="grid2">
+            <div class="field full">
+              <label class="lbl" for="iban">IBAN <span class="req">*</span></label>
+              <input type="text" id="iban" placeholder="PT50 0000 0000 0000 0000 0000 0" required />
+              <span class="helper">Conta onde será depositado o salário</span>
+            </div>
+            <div class="field full">
+              <label class="lbl" for="swift">SWIFT / BIC</label>
+              <input type="text" id="swift" placeholder="Ex: CGDIPTPL" maxlength="11" />
+              <span class="helper">Código internacional do banco (necessário para transferências do estrangeiro)</span>
+            </div>
+            <div class="field">
+              <label class="lbl" for="banco">Banco <span class="req">*</span></label>
+              <select id="banco" required>
+                <option value="">Selecionar...</option>
+                <option>CGD — Caixa Geral de Depósitos</option><option>BPI</option>
+                <option>Millennium BCP</option><option>Santander</option>
+                <option>Novo Banco</option><option>Montepio</option><option>Outro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl" for="titularConta">Titular da conta <span class="req">*</span></label>
+              <input type="text" id="titularConta" placeholder="Nome do titular" required />
+            </div>
+            <div class="field full">
+              <label class="lbl">IRS — entrega <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-opt"><input type="radio" name="irs" value="Individual"> Individual</label>
+                <label class="radio-opt"><input type="radio" name="irs" value="Conjunto"> Conjunto (com cônjuge)</label>
+              </div>
+              <span class="helper">Indica como pretende entregar a declaração de IRS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 3 -->
+      <div id="step3" class="hidden">
+        <div class="section">
+          <div class="section-title"><i class="ti ti-heart"></i> Estado civil</div>
+          <div class="field full">
+            <label class="lbl">Estado civil <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="estadoCivil" value="Solteiro/a"> Solteiro/a</label>
+              <label class="radio-opt"><input type="radio" name="estadoCivil" value="Casado/a"> Casado/a</label>
+              <label class="radio-opt"><input type="radio" name="estadoCivil" value="União de facto"> União de facto</label>
+              <label class="radio-opt"><input type="radio" name="estadoCivil" value="Divorciado/a"> Divorciado/a</label>
+              <label class="radio-opt"><input type="radio" name="estadoCivil" value="Separado/a"> Separado/a</label>
+              <label class="radio-opt"><input type="radio" name="estadoCivil" value="Viúvo/a"> Viúvo/a</label>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="ti ti-users"></i> Dependentes</div>
+          <div class="grid2">
+            <div class="field full">
+              <label class="lbl">Tem dependentes a cargo? <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-opt"><input type="radio" name="temDep" value="Sim"> Sim</label>
+                <label class="radio-opt"><input type="radio" name="temDep" value="Não"> Não</label>
+              </div>
+            </div>
+            <div class="field" id="rowNumDep" style="display:none">
+              <label class="lbl" for="numDep">Quantos dependentes? <span class="req">*</span></label>
+              <input type="number" id="numDep" min="1" max="20" placeholder="Ex: 2" />
+            </div>
+            <div class="field" id="rowIdadeDep" style="display:none">
+              <label class="lbl" for="idadesDep">Idades dos dependentes</label>
+              <input type="text" id="idadesDep" placeholder="Ex: 5, 8, 12" />
+              <span class="helper">Separar por vírgula</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 4 -->
+      <div id="step4" class="hidden">
+        <div class="section">
+          <div class="section-title"><i class="ti ti-accessible"></i> Deficiência / incapacidade</div>
+          <div class="grid2">
+            <div class="field full">
+              <label class="lbl">Possui grau de deficiência ou incapacidade reconhecida? <span class="req">*</span></label>
+              <div class="radio-group">
+                <label class="radio-opt"><input type="radio" name="temDef" value="Sim"> Sim</label>
+                <label class="radio-opt"><input type="radio" name="temDef" value="Não"> Não</label>
+              </div>
+            </div>
+            <div class="field full" id="rowGrauDef" style="display:none">
+              <label class="lbl" for="grauDef">Grau de incapacidade <span class="req">*</span></label>
+              <select id="grauDef">
+                <option value="">Selecionar...</option>
+                <option>Inferior a 60%</option><option>60% a 69%</option>
+                <option>70% a 79%</option><option>80% a 89%</option><option>90% ou superior</option>
+              </select>
+            </div>
+            <div class="field full" id="rowTipoDef" style="display:none">
+              <label class="lbl" for="tipoDef">Tipo de deficiência / incapacidade</label>
+              <select id="tipoDef">
+                <option value="">Selecionar...</option>
+                <option>Motora</option><option>Visual</option><option>Auditiva</option>
+                <option>Intelectual</option><option>Mental / Psicológica</option>
+                <option>Múltipla</option><option>Outra</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="ti ti-school"></i> Escolaridade</div>
+          <div class="grid2">
+            <div class="field full">
+              <label class="lbl" for="grauEscolar">Grau de escolaridade <span class="req">*</span></label>
+              <select id="grauEscolar" required>
+                <option value="">Selecionar...</option>
+                <option>Sem escolaridade</option><option>1.º ciclo (4.º ano)</option>
+                <option>2.º ciclo (6.º ano)</option><option>3.º ciclo (9.º ano)</option>
+                <option>Ensino secundário (12.º ano)</option><option>Curso profissional / tecnológico</option>
+                <option>Bacharelato</option><option>Licenciatura</option>
+                <option>Pós-graduação</option><option>Mestrado</option><option>Doutoramento</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl" for="areaCurso">Área de formação</label>
+              <input type="text" id="areaCurso" placeholder="Ex: Engenharia Informática" />
+            </div>
+            <div class="field">
+              <label class="lbl" for="instituicao">Instituição de ensino</label>
+              <input type="text" id="instituicao" placeholder="Ex: Universidade de Lisboa" />
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="ti ti-ruler-measure"></i> Fardamento</div>
+          <div class="grid2">
+            <div class="field">
+              <label class="lbl" for="numBota">N.º de bota / calçado <span class="req">*</span></label>
+              <select id="numBota" required>
+                <option value="">Selecionar...</option>
+                <option>35</option><option>36</option><option>37</option><option>38</option>
+                <option>39</option><option>40</option><option>41</option><option>42</option>
+                <option>43</option><option>44</option><option>45</option><option>46</option>
+                <option>47</option><option>48</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="lbl" for="numFato">Tamanho de fato <span class="req">*</span></label>
+              <select id="numFato" required>
+                <option value="">Selecionar...</option>
+                <option>XS</option><option>S</option><option>M</option>
+                <option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="rgpd-box">
+          <div class="section-title" style="color:#185FA5;margin-bottom:8px;"><i class="ti ti-shield-check" style="color:#185FA5;"></i> Declaração e consentimento RGPD</div>
+          <p>Declaro que os dados fornecidos são verdadeiros e autorizo o seu tratamento para fins de gestão de recursos humanos, nos termos do RGPD.</p>
+          <label class="rgpd-check">
+            <input type="checkbox" id="rgpd" required />
+            <span>Li e aceito a política de privacidade <span class="req">*</span></span>
+          </label>
+        </div>
+
+        <div class="loading-msg" id="loadingColab">
+          <i class="ti ti-loader-2"></i> A guardar dados e enviar notificação...
+        </div>
+        <div class="erro-msg" id="erroColab">
+          ⚠️ Erro ao enviar os dados. Verifique a ligação e tente novamente.
+        </div>
+      </div>
+
+      <div class="btn-row" id="btnRowColab">
+        <button type="button" class="btn" id="btnBack" style="display:none" onclick="goBack()">← Anterior</button>
+        <button type="button" class="btn btn-blue" id="btnNext" onclick="goNext()">Seguinte →</button>
+        <button type="submit" class="btn btn-blue" id="btnSubmit" style="display:none">Submeter dados ✓</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ═══ TRANSIÇÃO ═══ -->
+  <div id="phaseTransition" class="hidden">
+    <div class="success-colab">
+      <i class="ti ti-circle-check"></i>
+      <h3>Dados submetidos com sucesso!</h3>
+      <p>Obrigado. A sua parte da ficha está concluída.<br>A administração foi notificada e irá completar os dados profissionais.</p>
+    </div>
+    <div class="adm-gate">
+      <i class="ti ti-lock"></i>
+      <div class="adm-gate-text">
+        <p><strong>Secção reservada à Administração</strong>Clique no botão para completar os dados profissionais do colaborador.</p>
+      </div>
+      <button class="btn btn-amber" onclick="startAdm()">Entrar como Adm →</button>
+    </div>
+  </div>
+
+  <!-- ═══ FASE ADMINISTRAÇÃO ═══ -->
+  <div id="phaseAdm" class="hidden">
+    <div class="fc-header">
+      <div class="fc-logo adm"><i class="ti ti-briefcase" style="font-size:26px;color:#BA7517;"></i></div>
+      <div>
+        <div class="phase-badge adm"><i class="ti ti-lock-open" style="font-size:12px;"></i> Preenchimento pela Administração</div>
+        <div class="fc-title">Dados Profissionais</div>
+        <div class="fc-sub">Completar ficha do colaborador</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Administração — dados profissionais</span></div>
+      <div class="progress-bar"><div class="progress-fill adm" style="width:100%"></div></div>
+    </div>
+
+    <form id="admForm" novalidate>
+      <div class="section">
+        <div class="section-title adm-color"><i class="ti ti-briefcase"></i> Dados profissionais</div>
+        <div class="grid2">
+          <div class="field">
+            <label class="lbl" for="funcao">Função / Cargo <span class="req">*</span></label>
+            <input type="text" id="funcao" placeholder="Ex: Técnico Comercial" required />
+          </div>
+          <div class="field">
+            <label class="lbl" for="departamento">Departamento <span class="req">*</span></label>
+            <select id="departamento" required>
+              <option value="">Selecionar...</option>
+              <option>Administração</option><option>Comercial</option><option>Financeiro</option>
+              <option>Logística</option><option>Operações</option><option>Recursos Humanos</option>
+              <option>Tecnologia</option><option>Outro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="dataAdmissao">Data de admissão <span class="req">*</span></label>
+            <input type="date" id="dataAdmissao" required />
+          </div>
+          <div class="field">
+            <label class="lbl" for="tipoContrato">Tipo de contrato <span class="req">*</span></label>
+            <select id="tipoContrato" required>
+              <option value="">Selecionar...</option>
+              <option>Sem termo (efetivo)</option><option>A termo certo</option>
+              <option>A termo incerto</option><option>Prestação de serviços</option>
+              <option>Estágio profissional</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="horario">Horário de trabalho</label>
+            <select id="horario">
+              <option value="">Selecionar...</option>
+              <option>08h–17h</option><option>09h–18h</option>
+              <option>Turnos rotativos</option><option>Part-time</option><option>Flexível</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="salarioBase">Salário base (€)</label>
+            <input type="number" id="salarioBase" placeholder="Ex: 1200" min="0" />
+          </div>
+          <div class="field">
+            <label class="lbl" for="categoriaProf">Categoria profissional</label>
+            <input type="text" id="categoriaProf" placeholder="Ex: Técnico de nível 3" />
+          </div>
+          <div class="field">
+            <label class="lbl" for="numColaborador">N.º de colaborador</label>
+            <input type="text" id="numColaborador" placeholder="Ex: COL-0042" />
+          </div>
+          <div class="field full">
+            <label class="lbl" for="notasAdm">Notas internas</label>
+            <textarea id="notasAdm" placeholder="Observações internas da administração..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" style="border-color:#FADADD;">
+        <div class="section-title"><i class="ti ti-user-off" style="color:#C0392B;"></i> <span style="color:#A32D2D;">Cessação de contrato</span></div>
+        <div class="grid2">
+          <div class="field full">
+            <label class="lbl">O colaborador foi desligado?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="demitido" value="Sim"> Sim</label>
+              <label class="radio-opt"><input type="radio" name="demitido" value="Não"> Não</label>
+            </div>
+          </div>
+          <div id="secDemissao" style="display:none; grid-column:1/-1;">
+            <div class="grid2" style="margin-top:12px;">
+              <div class="field">
+                <label class="lbl" for="dataDemissao">Data de cessação</label>
+                <input type="date" id="dataDemissao" />
+              </div>
+              <div class="field">
+                <label class="lbl" for="motivoDemissao">Motivo de cessação</label>
+                <select id="motivoDemissao">
+                  <option value="">Selecionar...</option>
+                  <option>Rescisão por mútuo acordo</option>
+                  <option>Despedimento por justa causa</option>
+                  <option>Despedimento coletivo</option>
+                  <option>Extinção do posto de trabalho</option>
+                  <option>Fim de contrato a prazo</option>
+                  <option>Abandono de trabalho</option>
+                  <option>Reforma / Aposentação</option>
+                  <option>Renúncia pelo trabalhador</option>
+                  <option>Outro</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label class="lbl">Cumpre período de aviso prévio?</label>
+                <div class="radio-group">
+                  <label class="radio-opt"><input type="radio" name="avisoPrevio" value="Sim, cumpre"> Sim, cumpre</label>
+                  <label class="radio-opt"><input type="radio" name="avisoPrevio" value="Não cumpre"> Não cumpre</label>
+                  <label class="radio-opt"><input type="radio" name="avisoPrevio" value="Dispensado pela empresa"> Dispensado pela empresa</label>
+                </div>
+              </div>
+              <div class="field full">
+                <label class="lbl" for="obsCessacao">Observações sobre a cessação</label>
+                <textarea id="obsCessacao" placeholder="Informações adicionais sobre a saída do colaborador..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loading-msg" id="loadingAdm">
+        <i class="ti ti-loader-2"></i> A guardar dados profissionais...
+      </div>
+      <div class="erro-msg" id="erroAdm">
+        ⚠️ Erro ao guardar os dados. Verifique a ligação e tente novamente.
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-amber" id="btnAdmSubmit">Finalizar ficha ✓</button>
+      </div>
+    </form>
+
+    <div id="successFinal" class="success-final">
+      <i class="ti ti-circle-check"></i>
+      <h3>Ficha completa e arquivada!</h3>
+      <p>Todos os dados foram guardados no Google Sheets e o email de confirmação foi enviado.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var cur = 1;
+  var total = 4;
+  var labels = ['Identificação','Contactos e IBAN','Estado civil e família','Saúde, escolaridade e fardamento'];
+  var dadosColab = {};
+
+  document.querySelectorAll('.radio-opt').forEach(function(opt) {
+    opt.addEventListener('click', function() {
+      var inp = this.querySelector('input[type=radio]');
+      if (!inp) return;
+      document.querySelectorAll('[name="' + inp.name + '"]').forEach(function(r) {
+        r.closest('.radio-opt').classList.remove('selected');
+      });
+      this.classList.add('selected');
+      inp.checked = true;
+      if (inp.name === 'temDep') {
+        var show = inp.value === 'Sim';
+        document.getElementById('rowNumDep').style.display  = show ? 'flex' : 'none';
+        document.getElementById('rowIdadeDep').style.display = show ? 'flex' : 'none';
+      }
+      if (inp.name === 'temDef') {
+        var show = inp.value === 'Sim';
+        document.getElementById('rowGrauDef').style.display = show ? 'block' : 'none';
+        document.getElementById('rowTipoDef').style.display = show ? 'block' : 'none';
+      }
+      if (inp.name === 'demitido') {
+        document.getElementById('secDemissao').style.display = inp.value === 'Sim' ? 'block' : 'none';
+      }
+    });
+  });
+
+  function updateUI() {
+    for (var i = 1; i <= total; i++) {
+      var s = document.getElementById('step' + i);
+      if (s) s.classList.toggle('hidden', i !== cur);
+      var d = document.getElementById('dot' + i);
+      if (d) d.className = 'step-dot' + (i < cur ? ' done' : i === cur ? ' active' : '');
+    }
+    document.getElementById('btnBack').style.display   = cur > 1     ? 'inline-block' : 'none';
+    document.getElementById('btnNext').style.display   = cur < total ? 'inline-block' : 'none';
+    document.getElementById('btnSubmit').style.display = cur === total ? 'inline-block' : 'none';
+    var pct = Math.round(((cur - 1) / total) * 100);
+    document.getElementById('prog').style.width = pct + '%';
+    document.getElementById('pct').textContent  = pct + '%';
+    document.getElementById('stepLabel').textContent = 'Passo ' + cur + ' de ' + total + ' — ' + labels[cur - 1];
+  }
+
+  function goNext() { if (cur < total) { cur++; updateUI(); window.scrollTo(0,0); } }
+  function goBack() { if (cur > 1)     { cur--; updateUI(); window.scrollTo(0,0); } }
+
+  function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  function radio(name) {
+    var sel = document.querySelector('input[name="' + name + '"]:checked');
+    return sel ? sel.value : '';
+  }
+
+  document.getElementById('colForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (!document.getElementById('rgpd').checked) {
+      alert('Por favor, aceite a política de privacidade para continuar.');
+      return;
+    }
+
+    dadosColab = {
+      fase: 'colaborador',
+      nomeCompleto: val('nomeCompleto'), dataNasc: val('dataNasc'),
+      nif: val('nif'), niss: val('niss'),
+      tipoDoc: val('tipoDoc'), numDoc: val('numDoc'), validadeDoc: val('validadeDoc'),
+      nacionalidade: val('nacionalidade'), genero: radio('genero'),
+      morada: val('morada'), codPostal: val('codPostal'), localidade: val('localidade'),
+      telemovel: val('telemovel'), telefone: val('telefone'),
+      emailPessoal: val('emailPessoal'), contactoEmerg: val('contactoEmerg'),
+      iban: val('iban'), swift: val('swift'), banco: val('banco'), titularConta: val('titularConta'),
+      irs: radio('irs'),
+      estadoCivil: radio('estadoCivil'),
+      temDep: radio('temDep'), numDep: val('numDep'), idadesDep: val('idadesDep'),
+      temDef: radio('temDef'), grauDef: val('grauDef'), tipoDef: val('tipoDef'),
+      grauEscolar: val('grauEscolar'), areaCurso: val('areaCurso'), instituicao: val('instituicao'),
+      numBota: val('numBota'), numFato: val('numFato')
+    };
+    nomeColaboradorGuardado = dadosColab.nomeCompleto;
+
+    var loading = document.getElementById('loadingColab');
+    var erro    = document.getElementById('erroColab');
+    var btnSub  = document.getElementById('btnSubmit');
+    loading.style.display = 'flex';
+    erro.style.display    = 'none';
+    btnSub.disabled       = true;
+
+    function avancarParaTransicao() {
+      loading.style.display = 'none';
+      btnSub.disabled = false;
+      document.getElementById('phaseColab').classList.add('hidden');
+      document.getElementById('phaseTransition').classList.remove('hidden');
+      window.scrollTo(0,0);
+    }
+
+    if (!SCRIPT_URL || SCRIPT_URL === 'COLE_AQUI_A_URL_DO_APPS_SCRIPT') {
+      setTimeout(avancarParaTransicao, 600);
+      return;
+    }
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(dadosColab)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.sucesso) {
+        avancarParaTransicao();
+      } else {
+        loading.style.display = 'none';
+        btnSub.disabled = false;
+        erro.style.display = 'block';
+      }
+    })
+    .catch(function() {
+      loading.style.display = 'none';
+      btnSub.disabled = false;
+      erro.style.display = 'block';
+    });
+  });
+
+  function startAdm() {
+    document.getElementById('phaseTransition').classList.add('hidden');
+    document.getElementById('phaseAdm').classList.remove('hidden');
+    window.scrollTo(0,0);
+  }
+
+  document.getElementById('admForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var dadosAdm = {
+      fase: 'administracao',
+      nomeColaborador: nomeColaboradorGuardado,
+      funcao: val('funcao'), departamento: val('departamento'),
+      dataAdmissao: val('dataAdmissao'), tipoContrato: val('tipoContrato'),
+      horario: val('horario'), salarioBase: val('salarioBase'),
+      categoriaProf: val('categoriaProf'), numColaborador: val('numColaborador'),
+      notasAdm: val('notasAdm'),
+      demitido: radio('demitido'), dataDemissao: val('dataDemissao'),
+      motivoDemissao: val('motivoDemissao'), avisoPrevio: radio('avisoPrevio'),
+      obsCessacao: val('obsCessacao')
+    };
+
+    var loading2 = document.getElementById('loadingAdm');
+    var erro2    = document.getElementById('erroAdm');
+    var btnAdm  = document.getElementById('btnAdmSubmit');
+    loading2.style.display = 'flex';
+    erro2.style.display    = 'none';
+    btnAdm.disabled       = true;
+
+    function finalizarFicha() {
+      loading2.style.display = 'none';
+      btnAdm.disabled = false;
+      document.getElementById('admForm').style.display = 'none';
+      document.getElementById('successFinal').style.display = 'block';
+      window.scrollTo(0,0);
+    }
+
+    if (!SCRIPT_URL || SCRIPT_URL === 'COLE_AQUI_A_URL_DO_APPS_SCRIPT') {
+      setTimeout(finalizarFicha, 600);
+      return;
+    }
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(dadosAdm)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.sucesso) {
+        finalizarFicha();
+      } else {
+        loading2.style.display = 'none';
+        btnAdm.disabled = false;
+        erro2.style.display = 'block';
+      }
+    })
+    .catch(function() {
+      loading2.style.display = 'none';
+      btnAdm.disabled = false;
+      erro2.style.display = 'block';
+    });
+  });
+
+  updateUI();
+</script>
+</body>
+</html>
