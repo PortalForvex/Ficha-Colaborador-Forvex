@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -85,7 +84,7 @@
 
   <!-- ⚠️  SUBSTITUA ESTA URL PELO ENDEREÇO DO SEU GOOGLE APPS SCRIPT -->
   <script>
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7uG3UBq2JNGE82Rk3HOPAQ_n-HQpMklejkqEwnpWD0zbwaiIQO_beSvwIfVg549BO/exec";
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFTmRf5jQLLRjFtc2DSGdzDfgGb2gqPNlfFiAzHNIRu_7tzTxnJlfB2Q5iTMRjUEeuaw/exec";
     var nomeColaboradorGuardado = "";
   </script>
 
@@ -930,9 +929,11 @@
       return;
     }
 
+    var fd = new FormData();
+    fd.append('payload', JSON.stringify(dadosColab));
     fetch(SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify(dadosColab)
+      body: fd
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -997,7 +998,8 @@
       setTimeout(mostrarSucesso, 600); return;
     }
 
-    fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(dadosUpdate) })
+    var fd3 = new FormData(); fd3.append('payload', JSON.stringify(dadosUpdate));
+    fetch(SCRIPT_URL, { method: 'POST', body: fd3 })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.sucesso) { mostrarSucesso(); }
