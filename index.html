@@ -84,7 +84,7 @@
 
   <!-- ⚠️  SUBSTITUA ESTA URL PELO ENDEREÇO DO SEU GOOGLE APPS SCRIPT -->
   <script>
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxuIpWk-il5aKdgXtpqJgwDJ1E3wkl77EYapJH2zCvjU9gjp-WAHI3QLYnWM-XT9wmKYg/exec";
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_aU40JnIw1s6Ln7R2Lpr5Oq1C3W0HInUlHSWIDqLCetPEFjYCkE6r0TbZkNEtFcjnpw/exec";
     var nomeColaboradorGuardado = "";
   </script>
 
@@ -1053,6 +1053,16 @@
   }
 
     updateUI();
+
+  // Detect ?adm=1 in URL to show admin login directly
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('adm') === '1') {
+      document.getElementById('phaseWelcome').classList.add('hidden');
+      document.getElementById('phaseTransition').classList.remove('hidden');
+      showAdmLogin();
+    }
+  })();
 
   function campo(label, valor) {
     return '<div class="pdf-field"><label>' + label + '</label><span>' + (valor || '—') + '</span></div>';
