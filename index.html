@@ -1285,31 +1285,34 @@
 
     // If we have NIF, fetch from Supabase for complete data
     if (nif) {
-      // Step 1: get colaborador by NIF
-      fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(nif) + '&select=*', {
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-      })
-      .then(function(r){ return r.json(); })
-      .then(function(colabs) {
-        var colab = (colabs && colabs.length > 0) ? colabs[0] : {};
-        var colaboradorId = colab.id || '';
-        if (!colaboradorId) {
-          montarPDF(colab, colab, dadosAdm || {});
-          return;
-        }
-        // Step 2: get ficha by colaborador_id
-        fetch(SB_URL + '/rest/v1/fichas?colaborador_id=eq.' + colaboradorId + '&select=*', {
+      // Fetch colaborador and ficha in parallel - ficha by NIF (most reliable)
+      Promise.all([
+        fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(nif) + '&select=*', {
           headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-        })
-        .then(function(r){ return r.json(); })
-        .then(function(fichas) {
-          var ficha = (fichas && fichas.length > 0) ? fichas[0] : {};
+        }).then(function(r){ return r.json(); }),
+        fetch(SB_URL + '/rest/v1/fichas?nif=eq.' + encodeURIComponent(nif) + '&select=*', {
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+        }).then(function(r){ return r.json(); })
+      ])
+      .then(function(results) {
+        var colab = (results[0] && results[0].length > 0) ? results[0][0] : {};
+        var ficha = (results[1] && results[1].length > 0) ? results[1][0] : {};
+        // If ficha not found by nif, try by colaborador_id
+        if (!ficha.nif && colab.id) {
+          fetch(SB_URL + '/rest/v1/fichas?colaborador_id=eq.' + colab.id + '&select=*', {
+            headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+          })
+          .then(function(r){ return r.json(); })
+          .then(function(fichas2) {
+            var ficha2 = (fichas2 && fichas2.length > 0) ? fichas2[0] : {};
+            var dadosCombinados = Object.assign({}, colab, ficha2);
+            montarPDF(dadosCombinados, colab, dadosAdm || {});
+          })
+          .catch(function(){ montarPDF(colab, colab, dadosAdm || {}); });
+        } else {
           var dadosCombinados = Object.assign({}, colab, ficha);
           montarPDF(dadosCombinados, colab, dadosAdm || {});
-        })
-        .catch(function() {
-          montarPDF(colab, colab, dadosAdm || {});
-        });
+        }
       })
       .catch(function() {
         montarPDF(dadosColab || {}, {}, dadosAdm || {});
