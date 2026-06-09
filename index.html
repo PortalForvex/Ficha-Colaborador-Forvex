@@ -929,7 +929,7 @@
       return;
     }
 
-    enviarFormspree(FORMSPREE_COLAB, dadosColab, function() {
+    enviarFormspree(SCRIPT_URL, dadosColab, function() {
       avancarParaTransicao();
     }, function() {
       loading.style.display = 'none';
@@ -1023,7 +1023,7 @@
       window.scrollTo(0,0);
     }
 
-    enviarFormspree(FORMSPREE_ADM, dadosAdm, finalizarFicha, function() {
+    enviarFormspree(SCRIPT_URL, dadosAdm, finalizarFicha, function() {
       loading2.style.display = 'none';
       btnAdm.disabled = false;
       erro2.style.display = 'block';
