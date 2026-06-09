@@ -926,6 +926,22 @@
     btnSub.disabled       = true;
 
     function avancarParaTransicao() {
+      // Directly update Supabase ficha_pendente=true from browser
+      var nifColab = dadosColab.nif || val('nif') || '';
+      if (nifColab) {
+        var SB_URL = 'https://wbriqlcqfgnpjbxesmdc.supabase.co';
+        var SB_KEY = 'sb_publishable_T2GYe2-5dVrXLWZasUzPZQ_DnS7k-27';
+        fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(nifColab), {
+          method: 'PATCH',
+          headers: {
+            'apikey': SB_KEY,
+            'Authorization': 'Bearer ' + SB_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ ficha_pendente: true })
+        }).catch(function(){});
+      }
       loading.style.display = 'none';
       btnSub.disabled = false;
       document.getElementById('phaseColab').classList.add('hidden');
