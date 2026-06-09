@@ -1080,6 +1080,8 @@
       btnAdm.disabled = false;
       document.getElementById('admForm').style.display = 'none';
       document.getElementById('successFinal').style.display = 'block';
+      // Store NIF for PDF generation
+      window._nifPreenchido = dadosAdm.nif || window._nifPreenchido || '';
       window.scrollTo(0,0);
     }
 
@@ -1157,7 +1159,13 @@
   function gerarPDF() {
     var SB_URL = 'https://wbriqlcqfgnpjbxesmdc.supabase.co';
     var SB_KEY = 'sb_publishable_T2GYe2-5dVrXLWZasUzPZQ_DnS7k-27';
-    var nif = window._nifPreenchido || (dadosColab && dadosColab.nif) || '';
+    var nif = window._nifPreenchido || (dadosAdm && dadosAdm.nif) || (dadosColab && dadosColab.nif) || '';
+    // Also try to get NIF from URL in case page was refreshed
+    if (!nif) {
+      var urlParams = new URLSearchParams(window.location.search);
+      nif = urlParams.get('nif') || '';
+    }
+    console.log('PDF NIF:', nif);
     var agora = new Date().toLocaleDateString('pt-PT');
 
     function montarPDF(d, f, adm) {
