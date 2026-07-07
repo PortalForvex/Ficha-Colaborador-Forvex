@@ -84,7 +84,7 @@
 
   <!-- ⚠️  SUBSTITUA ESTA URL PELO ENDEREÇO DO SEU GOOGLE APPS SCRIPT -->
   <script>
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwuMRoFoxtaZmJQ6s-Y4xAHd68FX-5xgbvvHwSHoE0T1fylcyFnzcebsoLFQdCqbOKl2g/exec";
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTZfkoUXdZYsruTGxbYqoJW4pK0sekMxZO1HoVIk-9MXKWMCMPRKz8CyuGQOIrg6mrNw/exec";
     var nomeColaboradorGuardado = "";
     var SB_URL = "https://wbriqlcqfgnpjbxesmdc.supabase.co";
     var SB_KEY = "sb_publishable_T2GYe2-5dVrXLWZasUzPZQ_DnS7k-27";
@@ -931,6 +931,8 @@
       return;
     }
 
+    enviarAppsScript(dadosColab);
+
     enviarFormspree(FORMSPREE_COLAB, dadosColab, function() {
       avancarParaTransicao();
     }, function() {
@@ -986,6 +988,8 @@
       setTimeout(mostrarSucesso, 600); return;
     }
 
+    enviarAppsScript(dadosUpdate);
+
     enviarFormspree(FORMSPREE_UPD, dadosUpdate, function() {
       mostrarSucesso();
     }, function() {
@@ -1026,7 +1030,8 @@
     }
 
     salvarNoSupabase(function() {
-      // Grava com sucesso no Supabase — Formspree é só notificação extra, não bloqueia o fluxo
+      // Grava com sucesso no Supabase — Formspree e Apps Script são notificação/planilha, não bloqueiam o fluxo
+      enviarAppsScript(dadosAdm);
       enviarFormspree(FORMSPREE_ADM, dadosAdm, function() {}, function() {});
       finalizarFicha();
     }, function(err) {
@@ -1135,6 +1140,16 @@
         console.error('Erro ao gravar no Supabase:', err);
         onError(err);
       });
+  }
+
+  function enviarAppsScript(dados) {
+    if (!SCRIPT_URL || SCRIPT_URL === 'COLE_AQUI_A_URL_DO_APPS_SCRIPT') return;
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dados)
+    }).catch(function() {});
   }
 
   function enviarFormspree(url, dados, onSuccess, onError) {
