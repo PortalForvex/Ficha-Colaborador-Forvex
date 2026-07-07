@@ -86,6 +86,8 @@
   <script>
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwuMRoFoxtaZmJQ6s-Y4xAHd68FX-5xgbvvHwSHoE0T1fylcyFnzcebsoLFQdCqbOKl2g/exec";
     var nomeColaboradorGuardado = "";
+    var SB_URL = "https://wbriqlcqfgnpjbxesmdc.supabase.co";
+    var SB_KEY = "sb_publishable_T2GYe2-5dVrXLWZasUzPZQ_DnS7k-27";
   </script>
 
   <!-- ═══ ECRÃ INICIAL ═══ -->
@@ -1023,16 +1025,117 @@
       window.scrollTo(0,0);
     }
 
-    enviarFormspree(FORMSPREE_ADM, dadosAdm, finalizarFicha, function() {
+    salvarNoSupabase(function() {
+      // Grava com sucesso no Supabase — Formspree é só notificação extra, não bloqueia o fluxo
+      enviarFormspree(FORMSPREE_ADM, dadosAdm, function() {}, function() {});
+      finalizarFicha();
+    }, function(err) {
       loading2.style.display = 'none';
       btnAdm.disabled = false;
       erro2.style.display = 'block';
+      erro2.textContent = 'Erro ao gravar a ficha: ' + (err && err.message ? err.message : 'tente novamente.');
     });
   });
 
   var FORMSPREE_COLAB = "https://formspree.io/f/xnjwejzp";
   var FORMSPREE_ADM   = "https://formspree.io/f/xaqvrqbb";
   var FORMSPREE_UPD   = "https://formspree.io/f/xdabqadz";
+
+  function salvarNoSupabase(onSuccess, onError) {
+    var headers = {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json'
+    };
+    var headersWrite = Object.assign({}, headers, { 'Prefer': 'return=minimal' });
+
+    fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(dadosColab.nif) + '&select=id', { headers: headers })
+      .then(function(r) { return r.json(); })
+      .then(function(cols) {
+        if (!cols || cols.length === 0) {
+          throw new Error('Colaborador não encontrado com este NIF: ' + dadosColab.nif);
+        }
+        var colabId = cols[0].id;
+
+        var fichaPayload = {
+          colaborador_id: colabId,
+          nif: dadosColab.nif,
+          niss: dadosColab.niss,
+          tipo_doc: dadosColab.tipoDoc,
+          num_doc: dadosColab.numDoc,
+          validade_doc: dadosColab.validadeDoc,
+          nacionalidade: dadosColab.nacionalidade,
+          genero: dadosColab.genero,
+          data_nasc: dadosColab.dataNasc,
+          morada: dadosColab.morada,
+          cod_postal: dadosColab.codPostal,
+          localidade: dadosColab.localidade,
+          telemovel: dadosColab.telemovel,
+          email_pessoal: dadosColab.emailPessoal,
+          contacto_emerg: dadosColab.contactoEmerg,
+          iban: dadosColab.iban,
+          swift: dadosColab.swift,
+          banco: dadosColab.banco,
+          irs: dadosColab.irs,
+          estado_civil: dadosColab.estadoCivil,
+          tem_dep: dadosColab.temDep,
+          num_dep: dadosColab.numDep,
+          idades_dep: dadosColab.idadesDep,
+          tem_def: dadosColab.temDef,
+          grau_def: dadosColab.grauDef,
+          grau_escolar: dadosColab.grauEscolar,
+          num_bota: dadosColab.numBota,
+          num_fato: dadosColab.numFato,
+          atualizado_em: new Date().toISOString()
+        };
+
+        return fetch(SB_URL + '/rest/v1/fichas?colaborador_id=eq.' + colabId + '&select=id', { headers: headers })
+          .then(function(r) { return r.json(); })
+          .then(function(existentes) {
+            if (existentes && existentes.length > 0) {
+              return fetch(SB_URL + '/rest/v1/fichas?id=eq.' + existentes[0].id, {
+                method: 'PATCH',
+                headers: headersWrite,
+                body: JSON.stringify(fichaPayload)
+              });
+            } else {
+              return fetch(SB_URL + '/rest/v1/fichas', {
+                method: 'POST',
+                headers: headersWrite,
+                body: JSON.stringify(fichaPayload)
+              });
+            }
+          })
+          .then(function(resp) {
+            if (!resp.ok) { throw new Error('Falha ao gravar ficha (' + resp.status + ')'); }
+
+            var colabUpdate = { ficha_pendente: false };
+            if (dadosAdm.funcao)         colabUpdate.cargo = dadosAdm.funcao;
+            if (dadosAdm.departamento)   colabUpdate.departamento = dadosAdm.departamento;
+            if (dadosAdm.dataAdmissao)   colabUpdate.data_admissao = dadosAdm.dataAdmissao;
+            if (dadosAdm.tipoContrato)   colabUpdate.tipo_contrato = dadosAdm.tipoContrato;
+            if (dadosAdm.horario)        colabUpdate.horario = dadosAdm.horario;
+            if (dadosAdm.salarioBase)    colabUpdate.salario_base = parseFloat(dadosAdm.salarioBase);
+            if (dadosAdm.numColaborador) colabUpdate.num_colaborador = dadosAdm.numColaborador;
+            if (dadosAdm.notasAdm)       colabUpdate.notas_adm = dadosAdm.notasAdm;
+            if (dadosAdm.demitido === 'sim') colabUpdate.ativo = false;
+
+            return fetch(SB_URL + '/rest/v1/colaboradores?id=eq.' + colabId, {
+              method: 'PATCH',
+              headers: headersWrite,
+              body: JSON.stringify(colabUpdate)
+            });
+          });
+      })
+      .then(function(resp) {
+        if (resp && !resp.ok) { throw new Error('Falha ao atualizar colaborador (' + resp.status + ')'); }
+        onSuccess();
+      })
+      .catch(function(err) {
+        console.error('Erro ao gravar no Supabase:', err);
+        onError(err);
+      });
+  }
 
   function enviarFormspree(url, dados, onSuccess, onError) {
     var body = Object.keys(dados).map(function(k) {
