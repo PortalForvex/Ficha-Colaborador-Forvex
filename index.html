@@ -932,6 +932,7 @@
     }
 
     enviarAppsScript(dadosColab);
+    gravarFichaPessoalNaEtapa1(dadosColab);
 
     enviarFormspree(FORMSPREE_COLAB, dadosColab, function() {
       avancarParaTransicao();
@@ -1046,6 +1047,70 @@
   var FORMSPREE_ADM   = "https://formspree.io/f/xaqvrqbb";
   var FORMSPREE_UPD   = "https://formspree.io/f/xdabqadz";
 
+  function upsertFichaPessoal(dados, headers, headersWrite) {
+    return fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(dados.nif) + '&select=id', { headers: headers })
+      .then(function(r) { return r.json(); })
+      .then(function(cols) {
+        if (!cols || cols.length === 0) {
+          throw new Error('Colaborador não encontrado com este NIF: ' + dados.nif);
+        }
+        var colabId = cols[0].id;
+        var fichaPayload = {
+          colaborador_id: colabId,
+          nif: dados.nif,
+          niss: dados.niss,
+          tipo_doc: dados.tipoDoc,
+          num_doc: dados.numDoc,
+          validade_doc: dados.validadeDoc,
+          nacionalidade: dados.nacionalidade,
+          genero: dados.genero,
+          data_nasc: dados.dataNasc,
+          morada: dados.morada,
+          cod_postal: dados.codPostal,
+          localidade: dados.localidade,
+          telemovel: dados.telemovel,
+          email_pessoal: dados.emailPessoal,
+          contacto_emerg: dados.contactoEmerg,
+          iban: dados.iban,
+          swift: dados.swift,
+          banco: dados.banco,
+          irs: dados.irs,
+          estado_civil: dados.estadoCivil,
+          tem_dep: dados.temDep,
+          num_dep: dados.numDep,
+          idades_dep: dados.idadesDep,
+          tem_def: dados.temDef,
+          grau_def: dados.grauDef,
+          grau_escolar: dados.grauEscolar,
+          num_bota: dados.numBota,
+          num_fato: dados.numFato,
+          atualizado_em: new Date().toISOString()
+        };
+        return fetch(SB_URL + '/rest/v1/fichas?colaborador_id=eq.' + colabId + '&select=id', { headers: headers })
+          .then(function(r) { return r.json(); })
+          .then(function(existentes) {
+            if (existentes && existentes.length > 0) {
+              return fetch(SB_URL + '/rest/v1/fichas?id=eq.' + existentes[0].id, {
+                method: 'PATCH', headers: headersWrite, body: JSON.stringify(fichaPayload)
+              });
+            } else {
+              return fetch(SB_URL + '/rest/v1/fichas', {
+                method: 'POST', headers: headersWrite, body: JSON.stringify(fichaPayload)
+              });
+            }
+          });
+      });
+  }
+
+  function gravarFichaPessoalNaEtapa1(dados) {
+    if (!dados || !dados.nif) return;
+    var headers = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+    var headersWrite = Object.assign({}, headers, { 'Prefer': 'return=minimal' });
+    upsertFichaPessoal(dados, headers, headersWrite).catch(function(err) {
+      console.error('Aviso: não foi possível gravar já a ficha pessoal (o ADM ainda conseguirá completar depois):', err);
+    });
+  }
+
   function salvarNoSupabase(onSuccess, onError) {
     var headers = {
       'apikey': SB_KEY,
@@ -1053,84 +1118,61 @@
       'Content-Type': 'application/json'
     };
     var headersWrite = Object.assign({}, headers, { 'Prefer': 'return=minimal' });
+    var nif = (dadosColab && dadosColab.nif) || '';
 
-    fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(dadosColab.nif) + '&select=id', { headers: headers })
+    if (!nif) {
+      onError(new Error('NIF não identificado. Abra o link enviado por email para completar esta ficha.'));
+      return;
+    }
+
+    fetch(SB_URL + '/rest/v1/colaboradores?nif=eq.' + encodeURIComponent(nif) + '&select=id', { headers: headers })
       .then(function(r) { return r.json(); })
       .then(function(cols) {
         if (!cols || cols.length === 0) {
-          throw new Error('Colaborador não encontrado com este NIF: ' + dadosColab.nif);
+          throw new Error('Colaborador não encontrado com este NIF: ' + nif);
         }
         var colabId = cols[0].id;
 
-        var fichaPayload = {
-          colaborador_id: colabId,
-          nif: dadosColab.nif,
-          niss: dadosColab.niss,
-          tipo_doc: dadosColab.tipoDoc,
-          num_doc: dadosColab.numDoc,
-          validade_doc: dadosColab.validadeDoc,
-          nacionalidade: dadosColab.nacionalidade,
-          genero: dadosColab.genero,
-          data_nasc: dadosColab.dataNasc,
-          morada: dadosColab.morada,
-          cod_postal: dadosColab.codPostal,
-          localidade: dadosColab.localidade,
-          telemovel: dadosColab.telemovel,
-          email_pessoal: dadosColab.emailPessoal,
-          contacto_emerg: dadosColab.contactoEmerg,
-          iban: dadosColab.iban,
-          swift: dadosColab.swift,
-          banco: dadosColab.banco,
-          irs: dadosColab.irs,
-          estado_civil: dadosColab.estadoCivil,
-          tem_dep: dadosColab.temDep,
-          num_dep: dadosColab.numDep,
-          idades_dep: dadosColab.idadesDep,
-          tem_def: dadosColab.temDef,
-          grau_def: dadosColab.grauDef,
-          grau_escolar: dadosColab.grauEscolar,
-          num_bota: dadosColab.numBota,
-          num_fato: dadosColab.numFato,
-          atualizado_em: new Date().toISOString()
-        };
+        // Só grava/atualiza os dados pessoais na tabela fichas se eles estiverem
+        // realmente presentes nesta sessão (evita sobrescrever com valores em branco
+        // quando o ADM completa a ficha noutra sessão/dispositivo via link do email)
+        var temDadosPessoais = !!(dadosColab && dadosColab.nomeCompleto);
+        var chain = Promise.resolve();
 
-        return fetch(SB_URL + '/rest/v1/fichas?colaborador_id=eq.' + colabId + '&select=id', { headers: headers })
-          .then(function(r) { return r.json(); })
-          .then(function(existentes) {
-            if (existentes && existentes.length > 0) {
-              return fetch(SB_URL + '/rest/v1/fichas?id=eq.' + existentes[0].id, {
+        if (temDadosPessoais) {
+          chain = upsertFichaPessoal(dadosColab, headers, headersWrite)
+            .then(function(resp) {
+              if (!resp.ok) { throw new Error('Falha ao gravar ficha (' + resp.status + ')'); }
+            });
+        }
+
+        return chain.then(function() {
+          // Confirma se já existe uma ficha (gravada agora ou anteriormente) antes
+          // de marcar como concluída
+          return fetch(SB_URL + '/rest/v1/fichas?colaborador_id=eq.' + colabId + '&select=id', { headers: headers })
+            .then(function(r) { return r.json(); })
+            .then(function(existentes) {
+              var fichaExiste = existentes && existentes.length > 0;
+
+              var colabUpdate = {};
+              if (fichaExiste) colabUpdate.ficha_pendente = false;
+              if (dadosAdm.funcao)         colabUpdate.cargo = dadosAdm.funcao;
+              if (dadosAdm.departamento)   colabUpdate.departamento = dadosAdm.departamento;
+              if (dadosAdm.dataAdmissao)   colabUpdate.data_admissao = dadosAdm.dataAdmissao;
+              if (dadosAdm.tipoContrato)   colabUpdate.tipo_contrato = dadosAdm.tipoContrato;
+              if (dadosAdm.horario)        colabUpdate.horario = dadosAdm.horario;
+              if (dadosAdm.salarioBase)    colabUpdate.salario_base = parseFloat(dadosAdm.salarioBase);
+              if (dadosAdm.numColaborador) colabUpdate.num_colaborador = dadosAdm.numColaborador;
+              if (dadosAdm.notasAdm)       colabUpdate.notas_adm = dadosAdm.notasAdm;
+              if (dadosAdm.demitido === 'sim') colabUpdate.ativo = false;
+
+              return fetch(SB_URL + '/rest/v1/colaboradores?id=eq.' + colabId, {
                 method: 'PATCH',
                 headers: headersWrite,
-                body: JSON.stringify(fichaPayload)
+                body: JSON.stringify(colabUpdate)
               });
-            } else {
-              return fetch(SB_URL + '/rest/v1/fichas', {
-                method: 'POST',
-                headers: headersWrite,
-                body: JSON.stringify(fichaPayload)
-              });
-            }
-          })
-          .then(function(resp) {
-            if (!resp.ok) { throw new Error('Falha ao gravar ficha (' + resp.status + ')'); }
-
-            var colabUpdate = { ficha_pendente: false };
-            if (dadosAdm.funcao)         colabUpdate.cargo = dadosAdm.funcao;
-            if (dadosAdm.departamento)   colabUpdate.departamento = dadosAdm.departamento;
-            if (dadosAdm.dataAdmissao)   colabUpdate.data_admissao = dadosAdm.dataAdmissao;
-            if (dadosAdm.tipoContrato)   colabUpdate.tipo_contrato = dadosAdm.tipoContrato;
-            if (dadosAdm.horario)        colabUpdate.horario = dadosAdm.horario;
-            if (dadosAdm.salarioBase)    colabUpdate.salario_base = parseFloat(dadosAdm.salarioBase);
-            if (dadosAdm.numColaborador) colabUpdate.num_colaborador = dadosAdm.numColaborador;
-            if (dadosAdm.notasAdm)       colabUpdate.notas_adm = dadosAdm.notasAdm;
-            if (dadosAdm.demitido === 'sim') colabUpdate.ativo = false;
-
-            return fetch(SB_URL + '/rest/v1/colaboradores?id=eq.' + colabId, {
-              method: 'PATCH',
-              headers: headersWrite,
-              body: JSON.stringify(colabUpdate)
             });
-          });
+        });
       })
       .then(function(resp) {
         if (resp && !resp.ok) { throw new Error('Falha ao atualizar colaborador (' + resp.status + ')'); }
@@ -1179,6 +1221,10 @@
       document.getElementById('phaseWelcome').classList.add('hidden');
       document.getElementById('phaseTransition').classList.remove('hidden');
       showAdmLogin();
+      var nifUrl = params.get('nif');
+      if (nifUrl && !dadosColab.nif) {
+        dadosColab.nif = nifUrl;
+      }
     }
   })();
 
